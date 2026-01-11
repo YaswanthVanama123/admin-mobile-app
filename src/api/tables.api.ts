@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Table, TableFormData, ApiResponse } from '../types';
+import { Table, TableFormData, ApiResponse } from './types';
 
 export const tablesApi = {
   /**
@@ -45,15 +45,59 @@ export const tablesApi = {
    * Get table status
    */
   getStatus: async (id: string): Promise<{ isOccupied: boolean; currentOrderId?: string }> => {
-    const response = await apiClient.get<ApiResponse<any>>(`/tables/${id}/status`);
+    const response = await apiClient.get<ApiResponse<{ isOccupied: boolean; currentOrderId?: string }>>(
+      `/tables/${id}/status`
+    );
     return response.data.data;
   },
 
   /**
-   * Update table status (occupied/available)
+   * Get all occupied tables
    */
-  updateStatus: async (id: string, isOccupied: boolean): Promise<Table> => {
-    const response = await apiClient.patch<ApiResponse<Table>>(`/tables/${id}/status`, { isOccupied });
+  getOccupied: async (): Promise<Table[]> => {
+    const response = await apiClient.get<ApiResponse<Table[]>>('/tables/occupied');
+    return response.data.data;
+  },
+
+  /**
+   * Get all available tables
+   */
+  getAvailable: async (): Promise<Table[]> => {
+    const response = await apiClient.get<ApiResponse<Table[]>>('/tables/available');
+    return response.data.data;
+  },
+
+  /**
+   * Toggle table status (active/inactive)
+   */
+  toggleStatus: async (id: string): Promise<Table> => {
+    const response = await apiClient.patch<ApiResponse<Table>>(`/tables/${id}/toggle`);
+    return response.data.data;
+  },
+
+  /**
+   * Mark table as occupied
+   */
+  markOccupied: async (id: string, orderId: string): Promise<Table> => {
+    const response = await apiClient.patch<ApiResponse<Table>>(`/tables/${id}/occupy`, { orderId });
+    return response.data.data;
+  },
+
+  /**
+   * Mark table as available
+   */
+  markAvailable: async (id: string): Promise<Table> => {
+    const response = await apiClient.patch<ApiResponse<Table>>(`/tables/${id}/release`);
+    return response.data.data;
+  },
+
+  /**
+   * Get tables with current order information
+   */
+  getWithOrders: async (): Promise<Array<Table & { currentOrder?: any }>> => {
+    const response = await apiClient.get<ApiResponse<Array<Table & { currentOrder?: any }>>>(
+      '/tables/with-orders'
+    );
     return response.data.data;
   },
 };

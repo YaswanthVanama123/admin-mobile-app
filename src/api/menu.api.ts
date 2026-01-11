@@ -1,15 +1,9 @@
-import apiClient from './client';
-import { MenuItem, MenuItemFormData, ApiResponse, Category, AddOn } from '../types';
-
-export interface MenuPageData {
-  categories: Category[];
-  menuItems: MenuItem[];
-  addOns: AddOn[];
-}
+import { apiClient } from './client';
+import { MenuItem, MenuFilters, MenuItemFormData, ApiResponse, MenuPageData } from './types';
 
 export const menuApi = {
   /**
-   * Get menu management page data (categories + menu items + addOns)
+   * Get menu management page data (categories + menu items + addons) - OPTIMIZED
    */
   getPageData: async (): Promise<MenuPageData> => {
     const response = await apiClient.get<ApiResponse<MenuPageData>>('/menu/admin/page-data');
@@ -17,10 +11,12 @@ export const menuApi = {
   },
 
   /**
-   * Get all menu items
+   * Get all menu items with filters
    */
-  getAll: async (): Promise<MenuItem[]> => {
-    const response = await apiClient.get<ApiResponse<MenuItem[]>>('/menu');
+  getAll: async (filters?: MenuFilters): Promise<MenuItem[]> => {
+    const response = await apiClient.get<ApiResponse<MenuItem[]>>('/menu', {
+      params: filters,
+    });
     return response.data.data;
   },
 
@@ -33,9 +29,9 @@ export const menuApi = {
   },
 
   /**
-   * Create new menu item with optional image
+   * Create new menu item with optional image - OPTIMIZED (SINGLE REQUEST)
    */
-  create: async (data: MenuItemFormData, imageUri?: string): Promise<MenuItem> => {
+  create: async (data: MenuItemFormData, image?: File | any): Promise<MenuItem> => {
     const formData = new FormData();
 
     // Append all menu item fields
@@ -68,16 +64,8 @@ export const menuApi = {
     }
 
     // Append image if provided
-    if (imageUri) {
-      const filename = imageUri.split('/').pop() || 'image.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-      formData.append('image', {
-        uri: imageUri,
-        name: filename,
-        type,
-      } as any);
+    if (image) {
+      formData.append('image', image);
     }
 
     const response = await apiClient.post<ApiResponse<MenuItem>>('/menu', formData, {
@@ -89,9 +77,9 @@ export const menuApi = {
   },
 
   /**
-   * Update menu item with optional image
+   * Update menu item with optional image - OPTIMIZED (SINGLE REQUEST)
    */
-  update: async (id: string, data: Partial<MenuItemFormData>, imageUri?: string): Promise<MenuItem> => {
+  update: async (id: string, data: Partial<MenuItemFormData>, image?: File | any): Promise<MenuItem> => {
     const formData = new FormData();
 
     // Append only provided fields
@@ -118,16 +106,8 @@ export const menuApi = {
     }
 
     // Append image if provided
-    if (imageUri) {
-      const filename = imageUri.split('/').pop() || 'image.jpg';
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : 'image/jpeg';
-
-      formData.append('image', {
-        uri: imageUri,
-        name: filename,
-        type,
-      } as any);
+    if (image) {
+      formData.append('image', image);
     }
 
     const response = await apiClient.put<ApiResponse<MenuItem>>(`/menu/${id}`, formData, {
@@ -151,5 +131,45 @@ export const menuApi = {
   toggleAvailability: async (id: string): Promise<MenuItem> => {
     const response = await apiClient.patch<ApiResponse<MenuItem>>(`/menu/${id}/toggle`);
     return response.data.data;
+  },
+
+  /**
+   * Upload menu item image
+   */
+  uploadImage: async (id: string, formData: FormData): Promise<MenuItem> => {
+    const response = await apiClient.post<ApiResponse<MenuItem>>(
+      `/menu/${id}/image`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Search menu items
+   */
+  search: async (query: string): Promise<MenuItem[]> => {
+    const response = await apiClient.get<ApiResponse<MenuItem[]>>('/search/menu', {
+      params: { query },
+    });
+    return response.data.data;
+  },
+
+  /**
+   * Bulk update menu item availability
+   */
+  bulkUpdateAvailability: async (ids: string[], isAvailable: boolean): Promise<void> => {
+    await apiClient.patch('/menu/bulk/availability', { ids, isAvailable });
+  },
+
+  /**
+   * Reorder menu items
+   */
+  reorder: async (items: Array<{ id: string; order: number }>): Promise<void> => {
+    await apiClient.post('/menu/reorder', { items });
   },
 };
