@@ -57,8 +57,7 @@
           "color": "#6200ee",
           "sounds": ["./assets/sounds/new-order.wav"]
         }
-      ],
-      "expo-print"
+      ]
     ],
     "experiments": {
       "typedRoutes": true

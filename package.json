@@ -60,5 +60,8 @@
     "eslint-config-expo": "^7.1.2",
     "typescript": "^5.3.3"
   },
+  "engines": {
+    "node": ">=18 <19"
+  },
   "private": true
 }
