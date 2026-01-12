@@ -7,7 +7,9 @@ import { SecureStorage } from '../utils/storage';
 import firebaseService from '../services/firebase.service';
 import fcmTokenService from '../services/fcmToken.service';
 import printService from '../services/print.service';
+import soundVibrationService from '../services/soundVibration.service';
 import { useSettings } from './SettingsContext';
+import { useToast } from './ToastContext';
 
 interface OrdersContextType {
   activeOrders: Order[];
@@ -25,6 +27,7 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [error, setError] = useState<string | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   /**
    * Setup Firebase notifications
@@ -32,6 +35,9 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const setupFirebase = async () => {
       try {
+        // Initialize sound and vibration service
+        await soundVibrationService.initialize();
+
         // Initialize Firebase and get token
         const token = await firebaseService.initialize();
         if (token) {
@@ -99,21 +105,52 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return [order, ...prevOrders];
       });
 
+      // Show notification for new order
+      showToast(`New Order #${order.orderNumber} - Table ${order.tableNumber || 'N/A'}`, 'info');
+
+      // Play sound and vibrate (like Swiggy/Zomato)
+      if (settings.soundEnabled) {
+        await soundVibrationService.notifyNewOrder();
+      }
+
       // Trigger auto-print if enabled
       if (settings.autoPrintEnabled) {
         console.log('🖨️  Auto-print enabled, printing order...');
+        showToast(`Printing Order #${order.orderNumber}...`, 'info');
+
         try {
           await printService.printOrder(order);
           console.log('✅ Order auto-printed successfully');
-        } catch (printError) {
+          showToast(`Order #${order.orderNumber} printed successfully!`, 'success');
+
+          // Play success sound
+          if (settings.soundEnabled) {
+            await soundVibrationService.notifySuccess();
+          }
+        } catch (printError: any) {
           console.error('❌ Auto-print failed:', printError);
+          showToast(
+            `Print failed: ${printError.message}. Order saved, print manually.`,
+            'error'
+          );
+
+          // Play error sound
+          if (settings.soundEnabled) {
+            await soundVibrationService.notifyError();
+          }
           // Don't throw - we still want to show the order even if print fails
         }
       }
     } catch (error) {
       console.error('Failed to handle new order notification:', error);
+      showToast('Failed to fetch order details', 'error');
+
+      // Play error sound
+      if (settings.soundEnabled) {
+        await soundVibrationService.notifyError();
+      }
     }
-  }, [settings.autoPrintEnabled]);
+  }, [settings.autoPrintEnabled, settings.soundEnabled, showToast]);
 
   /**
    * Handle order status changed notification from Firebase

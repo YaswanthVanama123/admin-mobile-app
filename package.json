@@ -2,7 +2,7 @@
   "name": "admin-mobile-app",
   "version": "1.0.0",
   "description": "Admin Mobile App for PatLinks",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -47,7 +47,8 @@
     "@react-native-firebase/messaging": "^18.7.0",
     "expo-device": "~6.0.0",
     "expo-notifications": "~0.28.0",
-    "expo-print": "~13.0.1"
+    "expo-print": "~13.0.1",
+    "expo-haptics": "~13.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

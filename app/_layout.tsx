@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SettingsProvider } from '../src/context/SettingsContext';
+import { ToastProvider } from '../src/context/ToastContext';
 import { OrdersProvider } from '../src/context/OrdersContext';
 import { useEffect } from 'react';
 import firebaseService from '../src/services/firebase.service';
@@ -20,13 +21,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PaperProvider>
         <SettingsProvider>
-          <OrdersProvider>
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-          </OrdersProvider>
+          <ToastProvider>
+            <OrdersProvider>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+            </OrdersProvider>
+          </ToastProvider>
         </SettingsProvider>
       </PaperProvider>
     </GestureHandlerRootView>

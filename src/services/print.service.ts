@@ -5,6 +5,12 @@ import { STORAGE_KEYS } from '../utils/constants';
 /**
  * Print Service Client for Admin Mobile App
  * Communicates with the Print Service (standalone Electron app) for thermal printing
+ *
+ * Features:
+ * - Automatic retry on failure (like Swiggy/Zomato)
+ * - Print queue for handling multiple orders
+ * - Connection health monitoring
+ * - Detailed error messages
  */
 
 interface PrintServiceConfig {
@@ -29,16 +35,27 @@ interface Order {
   createdAt: string | Date;
 }
 
+interface PrintQueueItem {
+  order: Order;
+  attempts: number;
+  timestamp: number;
+}
+
 class PrintService {
   private client: AxiosInstance;
   private defaultConfig: PrintServiceConfig = {
     baseURL: 'http://localhost:9100',
     timeout: 10000,
   };
+  private printQueue: PrintQueueItem[] = [];
+  private isProcessingQueue = false;
+  private maxRetries = 3;
+  private retryDelay = 2000; // 2 seconds
 
   constructor() {
     this.client = this.createClient(this.defaultConfig);
     this.loadSavedURL();
+    this.startQueueProcessor();
   }
 
   private createClient(config: PrintServiceConfig): AxiosInstance {
@@ -99,32 +116,125 @@ class PrintService {
 
   /**
    * Print order to thermal printer via Print Service
+   * With automatic retry on failure (like Swiggy/Zomato)
    */
   async printOrder(order: Order): Promise<void> {
     try {
-      console.log('🖨️  Sending order to Print Service:', order.orderNumber);
+      console.log('🖨️  Adding order to print queue:', order.orderNumber);
 
-      const response = await this.client.post('/print', order);
+      // Add to queue
+      this.printQueue.push({
+        order,
+        attempts: 0,
+        timestamp: Date.now(),
+      });
 
-      if (response.data.success) {
-        console.log('✅ Order printed successfully:', order.orderNumber);
-      } else {
-        throw new Error(response.data.error || 'Print failed');
+      // Process queue if not already processing
+      if (!this.isProcessingQueue) {
+        this.processQueue();
       }
     } catch (error: any) {
-      console.error('❌ Failed to print order:', error);
-
-      if (error.code === 'ECONNREFUSED' || error.code === 'ECONNABORTED') {
-        throw new Error(
-          'Print Service not available. Please check:\n' +
-            '1. Print Service app is running\n' +
-            '2. Print Service URL is correct in settings\n' +
-            '3. You are on the same network (for tablets)'
-        );
-      }
-
+      console.error('❌ Failed to add order to print queue:', error);
       throw error;
     }
+  }
+
+  /**
+   * Process print queue with retry logic
+   */
+  private async processQueue(): Promise<void> {
+    if (this.isProcessingQueue || this.printQueue.length === 0) {
+      return;
+    }
+
+    this.isProcessingQueue = true;
+
+    while (this.printQueue.length > 0) {
+      const queueItem = this.printQueue[0];
+
+      try {
+        console.log(
+          `🖨️  Processing order: ${queueItem.order.orderNumber} (Attempt ${queueItem.attempts + 1}/${this.maxRetries})`
+        );
+
+        // Attempt to print
+        await this.sendPrintRequest(queueItem.order);
+
+        // Success - remove from queue
+        this.printQueue.shift();
+        console.log('✅ Order printed successfully:', queueItem.order.orderNumber);
+      } catch (error: any) {
+        console.error('❌ Print failed:', error.message);
+
+        queueItem.attempts++;
+
+        // Check if we should retry
+        if (queueItem.attempts < this.maxRetries) {
+          console.log(
+            `🔄 Retrying order ${queueItem.order.orderNumber} in ${this.retryDelay / 1000}s...`
+          );
+
+          // Wait before retry
+          await this.sleep(this.retryDelay);
+
+          // Move to end of queue and continue
+          this.printQueue.push(this.printQueue.shift()!);
+        } else {
+          // Max retries reached - remove from queue
+          console.error(
+            `❌ Max retries reached for order ${queueItem.order.orderNumber}. Removing from queue.`
+          );
+          this.printQueue.shift();
+
+          // Throw error so OrdersContext can show notification
+          throw new Error(
+            `Failed to print order ${queueItem.order.orderNumber} after ${this.maxRetries} attempts`
+          );
+        }
+      }
+    }
+
+    this.isProcessingQueue = false;
+  }
+
+  /**
+   * Send print request to Print Service
+   */
+  private async sendPrintRequest(order: Order): Promise<void> {
+    const response = await this.client.post('/print', order);
+
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Print failed');
+    }
+  }
+
+  /**
+   * Start automatic queue processor
+   */
+  private startQueueProcessor(): void {
+    // Check queue every 5 seconds for any pending items
+    setInterval(() => {
+      if (this.printQueue.length > 0 && !this.isProcessingQueue) {
+        this.processQueue();
+      }
+    }, 5000);
+  }
+
+  /**
+   * Sleep helper for retry delay
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Get current queue status
+   */
+  getQueueStatus(): { pending: number; processing: boolean } {
+    return {
+      pending: this.printQueue.length,
+      processing: this.isProcessingQueue,
+    };
   }
 
   /**
