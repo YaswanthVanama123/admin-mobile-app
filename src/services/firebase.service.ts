@@ -1,10 +1,14 @@
 import messaging from '@react-native-firebase/messaging';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
+import notifee, { AndroidImportance } from '@notifee/react-native';
+import DeviceInfo from 'react-native-device-info';
 
 /**
  * Firebase Cloud Messaging Service for Admin Mobile App
  * Handles push notifications for new orders and order updates
+ *
+ * Migrated from Expo to React Native CLI:
+ * - expo-notifications → @notifee/react-native
+ * - expo-device → react-native-device-info
  */
 class FirebaseService {
   private initialized = false;
@@ -15,7 +19,7 @@ class FirebaseService {
    */
   async initialize(): Promise<string | null> {
     try {
-      // Request permissions
+      // Request FCM permissions
       const authStatus = await messaging().requestPermission();
       const enabled =
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
@@ -26,24 +30,91 @@ class FirebaseService {
         return null;
       }
 
-      // Configure notification handler for Expo Notifications
-      Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowAlert: true,
-          shouldPlaySound: true,
-          shouldSetBadge: true,
-        }),
-      });
+      // Create notification channel for Android
+      await this.createNotificationChannels();
 
       // Get FCM token
       const token = await messaging().getToken();
       console.log('✅ FCM Token obtained:', token.substring(0, 20) + '...');
+
+      // Log device info for debugging
+      const deviceId = await DeviceInfo.getUniqueId();
+      const deviceName = await DeviceInfo.getDeviceName();
+      const isTablet = DeviceInfo.isTablet();
+      console.log(`📱 Device: ${deviceName} (${deviceId}), Tablet: ${isTablet}`);
 
       this.initialized = true;
       return token;
     } catch (error) {
       console.error('Failed to initialize Firebase:', error);
       return null;
+    }
+  }
+
+  /**
+   * Create Android notification channels
+   * Required for Android 8.0+
+   */
+  private async createNotificationChannels(): Promise<void> {
+    try {
+      // Orders channel - high priority with sound
+      await notifee.createChannel({
+        id: 'orders',
+        name: 'Order Notifications',
+        description: 'Notifications for new orders and order updates',
+        importance: AndroidImportance.HIGH,
+        sound: 'new_order',
+        vibration: true,
+        vibrationPattern: [300, 500, 300, 500],
+      });
+
+      // Default channel
+      await notifee.createChannel({
+        id: 'default',
+        name: 'General Notifications',
+        description: 'General app notifications',
+        importance: AndroidImportance.DEFAULT,
+      });
+
+      console.log('✅ Notification channels created');
+    } catch (error) {
+      console.error('Failed to create notification channels:', error);
+    }
+  }
+
+  /**
+   * Display notification using Notifee
+   * Called for foreground messages
+   */
+  async displayNotification(
+    title: string,
+    body: string,
+    data?: any
+  ): Promise<void> {
+    try {
+      await notifee.displayNotification({
+        title,
+        body,
+        data,
+        android: {
+          channelId: 'orders',
+          importance: AndroidImportance.HIGH,
+          pressAction: {
+            id: 'default',
+          },
+          sound: 'new_order',
+          vibrationPattern: [300, 500, 300, 500],
+          largeIcon: require('../../assets/icon.png'),
+          color: '#3b82f6',
+        },
+        ios: {
+          sound: 'new_order.wav',
+          critical: true,
+          criticalVolume: 1.0,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to display notification:', error);
     }
   }
 
@@ -67,8 +138,19 @@ class FirebaseService {
    * Called when app is in foreground and notification is received
    */
   onMessageReceived(callback: (remoteMessage: any) => void): () => void {
-    const unsubscribe = messaging().onMessage((remoteMessage) => {
+    const unsubscribe = messaging().onMessage(async (remoteMessage) => {
       console.log('📱 Foreground notification received:', remoteMessage);
+
+      // Display notification with Notifee for better control
+      if (remoteMessage.notification) {
+        await this.displayNotification(
+          remoteMessage.notification.title || 'New Notification',
+          remoteMessage.notification.body || '',
+          remoteMessage.data
+        );
+      }
+
+      // Call callback for app logic
       callback(remoteMessage);
     });
 

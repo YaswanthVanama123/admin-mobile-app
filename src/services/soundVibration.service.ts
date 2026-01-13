@@ -1,28 +1,54 @@
-import * as Notifications from 'expo-notifications';
-import { Audio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
+import Sound from 'react-native-sound';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 /**
  * Sound & Vibration Service for Admin Mobile App
  * Provides audio and haptic feedback for important events
+ *
+ * Migrated from Expo to React Native CLI:
+ * - expo-av → react-native-sound
+ * - expo-haptics → react-native-haptic-feedback
  */
 
+// Enable playback in silence mode
+Sound.setCategory('Playback');
+
 class SoundVibrationService {
-  private sound: Audio.Sound | null = null;
+  private newOrderSound: Sound | null = null;
+  private successSound: Sound | null = null;
+  private errorSound: Sound | null = null;
   private soundEnabled = true;
   private vibrationEnabled = true;
 
   /**
-   * Initialize audio settings
+   * Initialize and preload sounds
+   * Sound files should be placed in:
+   * - Android: android/app/src/main/res/raw/new_order.mp3
+   * - iOS: Add to Xcode project
    */
   async initialize(): Promise<void> {
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
+      // Preload new order sound
+      this.newOrderSound = new Sound('new_order.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.error('Failed to load new order sound:', error);
+        }
       });
+
+      // Preload success sound
+      this.successSound = new Sound('success.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.error('Failed to load success sound:', error);
+        }
+      });
+
+      // Preload error sound
+      this.errorSound = new Sound('error.mp3', Sound.MAIN_BUNDLE, (error) => {
+        if (error) {
+          console.error('Failed to load error sound:', error);
+        }
+      });
+
       console.log('✅ Audio initialized');
     } catch (error) {
       console.error('Failed to initialize audio:', error);
@@ -34,26 +60,13 @@ class SoundVibrationService {
    * Like Swiggy/Zomato notification sound
    */
   async playNewOrderSound(): Promise<void> {
-    if (!this.soundEnabled) return;
+    if (!this.soundEnabled || !this.newOrderSound) return;
 
     try {
-      // Unload previous sound if exists
-      if (this.sound) {
-        await this.sound.unloadAsync();
-      }
-
-      // Load and play notification sound
-      const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/new-order.mp3'),
-        { shouldPlay: true, volume: 1.0 }
-      );
-
-      this.sound = sound;
-
-      // Unload after playing
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync();
+      this.newOrderSound.setVolume(1.0);
+      this.newOrderSound.play((success) => {
+        if (!success) {
+          console.error('Playback failed');
         }
       });
     } catch (error) {
@@ -65,17 +78,13 @@ class SoundVibrationService {
    * Play success sound (order completed, payment received, etc.)
    */
   async playSuccessSound(): Promise<void> {
-    if (!this.soundEnabled) return;
+    if (!this.soundEnabled || !this.successSound) return;
 
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/success.mp3'),
-        { shouldPlay: true, volume: 0.7 }
-      );
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync();
+      this.successSound.setVolume(0.7);
+      this.successSound.play((success) => {
+        if (!success) {
+          console.error('Playback failed');
         }
       });
     } catch (error) {
@@ -87,17 +96,13 @@ class SoundVibrationService {
    * Play error sound
    */
   async playErrorSound(): Promise<void> {
-    if (!this.soundEnabled) return;
+    if (!this.soundEnabled || !this.errorSound) return;
 
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/error.mp3'),
-        { shouldPlay: true, volume: 0.7 }
-      );
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync();
+      this.errorSound.setVolume(0.7);
+      this.errorSound.play((success) => {
+        if (!success) {
+          console.error('Playback failed');
         }
       });
     } catch (error) {
@@ -107,15 +112,20 @@ class SoundVibrationService {
 
   /**
    * Vibrate for new order (heavy impact)
+   * Double vibration pattern for attention
    */
   async vibrateNewOrder(): Promise<void> {
     if (!this.vibrationEnabled) return;
 
     try {
-      // Heavy impact vibration pattern
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      setTimeout(async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      const options = {
+        enableVibrateFallback: true,
+        ignoreAndroidSystemSettings: false,
+      };
+
+      ReactNativeHapticFeedback.trigger('impactHeavy', options);
+      setTimeout(() => {
+        ReactNativeHapticFeedback.trigger('impactHeavy', options);
       }, 200);
     } catch (error) {
       console.error('Failed to vibrate:', error);
@@ -129,7 +139,10 @@ class SoundVibrationService {
     if (!this.vibrationEnabled) return;
 
     try {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      ReactNativeHapticFeedback.trigger('notificationSuccess', {
+        enableVibrateFallback: true,
+        ignoreAndroidSystemSettings: false,
+      });
     } catch (error) {
       console.error('Failed to vibrate:', error);
     }
@@ -142,7 +155,10 @@ class SoundVibrationService {
     if (!this.vibrationEnabled) return;
 
     try {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      ReactNativeHapticFeedback.trigger('notificationError', {
+        enableVibrateFallback: true,
+        ignoreAndroidSystemSettings: false,
+      });
     } catch (error) {
       console.error('Failed to vibrate:', error);
     }
@@ -155,7 +171,10 @@ class SoundVibrationService {
     if (!this.vibrationEnabled) return;
 
     try {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      ReactNativeHapticFeedback.trigger('notificationWarning', {
+        enableVibrateFallback: true,
+        ignoreAndroidSystemSettings: false,
+      });
     } catch (error) {
       console.error('Failed to vibrate:', error);
     }
@@ -207,12 +226,12 @@ class SoundVibrationService {
   }
 
   /**
-   * Cleanup
+   * Cleanup - release sound resources
    */
   async cleanup(): Promise<void> {
-    if (this.sound) {
-      await this.sound.unloadAsync();
-    }
+    this.newOrderSound?.release();
+    this.successSound?.release();
+    this.errorSound?.release();
   }
 }
 

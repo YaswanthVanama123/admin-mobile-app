@@ -1,7 +1,7 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    presets: ['module:@react-native/babel-preset'],
     plugins: [
       'react-native-reanimated/plugin',
       [
@@ -12,10 +12,12 @@ module.exports = function (api) {
             '@': './src',
             '@components': './src/components',
             '@screens': './src/screens',
+            '@navigation': './src/navigation',
             '@api': './src/api',
             '@context': './src/context',
             '@utils': './src/utils',
             '@types': './src/types',
+            '@services': './src/services',
           },
         },
       ],
