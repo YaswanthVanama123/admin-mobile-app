@@ -1,7 +1,6 @@
 import { registerRootComponent } from 'expo';
+import { ExpoRoot } from 'expo-router';
 import messaging from '@react-native-firebase/messaging';
-
-import App from './App';
 
 /**
  * Background message handler for Firebase Cloud Messaging
@@ -16,7 +15,5 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
   // Note: UI updates should be done when the app comes to foreground
 });
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+// registerRootComponent ensures the Expo runtime is initialized correctly
+registerRootComponent(ExpoRoot);
