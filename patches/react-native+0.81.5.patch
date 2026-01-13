@@ -1,0 +1,18 @@
+diff --git a/node_modules/react-native/scripts/codegen/generate-specs-cli-executor.js b/node_modules/react-native/scripts/codegen/generate-specs-cli-executor.js
+index a50afb5..2821899 100644
+--- a/node_modules/react-native/scripts/codegen/generate-specs-cli-executor.js
++++ b/node_modules/react-native/scripts/codegen/generate-specs-cli-executor.js
+@@ -104,7 +104,12 @@ function generateSpecFromInMemorySchema(
+     files
+       .filter(f => f.endsWith('.h') || f.endsWith('.cpp'))
+       .forEach(f => {
+-        fs.renameSync(`${outputDirectory}/${f}`, `${jniOutputDirectory}/${f}`);
++        const sourcePath = path.join(outputDirectory, f);
++        const destinationPath = path.join(jniOutputDirectory, f);
++        if (fs.existsSync(destinationPath)) {
++          fs.unlinkSync(destinationPath);
++        }
++        fs.renameSync(sourcePath, destinationPath);
+       });
+   }
+ }

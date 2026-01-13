@@ -1,0 +1,40 @@
+diff --git a/node_modules/@react-native-firebase/app/plugin/build/ios/appDelegate.js b/node_modules/@react-native-firebase/app/plugin/build/ios/appDelegate.js
+index 8cf92f0..15920cf 100644
+--- a/node_modules/@react-native-firebase/app/plugin/build/ios/appDelegate.js
++++ b/node_modules/@react-native-firebase/app/plugin/build/ios/appDelegate.js
+@@ -57,12 +57,35 @@ function modifyObjcAppDelegate(contents) {
+     }
+ }
+ exports.modifyObjcAppDelegate = modifyObjcAppDelegate;
++function ensureSwiftImport(contents) {
++    if (!contents.includes('import FirebaseCore')) {
++        contents = contents.replace(/import ExpoModulesCore(\r?\n)/, 'import ExpoModulesCore$1import FirebaseCore$1');
++    }
++    return contents;
++}
++
++function ensureSwiftConfigure(contents) {
++    if (contents.includes('FirebaseApp.configure()')) {
++        return contents;
++    }
++    const pattern = /return super\.application\(application, didFinishLaunchingWithOptions: launchOptions\)/;
++    if (pattern.test(contents)) {
++        return contents.replace(pattern, '        FirebaseApp.configure()\n        return super.application(application, didFinishLaunchingWithOptions: launchOptions)');
++    }
++    return contents;
++}
+ async function modifyAppDelegateAsync(appDelegateFileInfo) {
+     const { language, path, contents } = appDelegateFileInfo;
+     if (['objc', 'objcpp'].includes(language)) {
+         const newContents = modifyObjcAppDelegate(contents);
+         await fs_1.default.promises.writeFile(path, newContents);
+     }
++    else if (language === 'swift') {
++        let newContents = contents;
++        newContents = ensureSwiftImport(newContents);
++        newContents = ensureSwiftConfigure(newContents);
++        await fs_1.default.promises.writeFile(path, newContents);
++    }
+     else {
+         // TODO: Support Swift
+         throw new Error(`Cannot add Firebase code to AppDelegate of language "${language}"`);

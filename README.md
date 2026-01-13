@@ -13,12 +13,12 @@ Admin mobile application for the PatLinks platform built with React Native and E
 
 ## Prerequisites
 
-- Node.js 18.x (Expo SDK 52 packages like `expo-modules-core` ship TypeScript sources that Node 20 cannot execute, so the CLI must run on Node 18)
+- Node.js 20.19.4 or higher (Expo SDK 54 / React Native 0.81 relies on Metro 0.83 which only runs on Node >=20.19.4)
 - npm or yarn
 - Expo CLI (`npm install -g expo-cli`)
 - iOS Simulator (Mac only) or Android Emulator
 
-> **Node 20 warning:** Running `npm start` / `npx expo start` with Node 20 raises `ERR_UNKNOWN_FILE_EXTENSION ".ts"` because the Expo modules CLI loads `expo-modules-core` directly. Use a Node 18 toolchain (via [nvm](https://github.com/nvm-sh/nvm) or similar) when developing this app.
+> **Node 18 warning:** Node 18 can no longer run this project now that Expo uses SDK 54; Metro and many native modules depend on Node 20 APIs, so switch with `nvm use 20.19.4` (or later) before `npm start`.
 
 ## Installation
 

@@ -1,5 +1,4 @@
 import React from 'react';
-<parameter name="content">import React from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Order, OrderStatus } from '../../types';
