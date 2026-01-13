@@ -11,7 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useAuth } from '../context/AdminAuthContext';
+import { useAuth } from '../context/AuthContext';
 import { SecureStorage } from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
 

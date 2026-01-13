@@ -23,27 +23,27 @@ class SoundVibrationService {
   /**
    * Initialize and preload sounds
    * Sound files should be placed in:
-   * - Android: android/app/src/main/res/raw/new_order.mp3
+   * - Android: android/app/src/main/res/raw/new_order.wav
    * - iOS: Add to Xcode project
    */
   async initialize(): Promise<void> {
     try {
       // Preload new order sound
-      this.newOrderSound = new Sound('new_order.mp3', Sound.MAIN_BUNDLE, (error) => {
+      this.newOrderSound = new Sound('new_order.wav', Sound.MAIN_BUNDLE, (error) => {
         if (error) {
           console.error('Failed to load new order sound:', error);
         }
       });
 
-      // Preload success sound
-      this.successSound = new Sound('success.mp3', Sound.MAIN_BUNDLE, (error) => {
+      // Preload success sound (using same sound as new order for now)
+      this.successSound = new Sound('new_order.wav', Sound.MAIN_BUNDLE, (error) => {
         if (error) {
           console.error('Failed to load success sound:', error);
         }
       });
 
-      // Preload error sound
-      this.errorSound = new Sound('error.mp3', Sound.MAIN_BUNDLE, (error) => {
+      // Preload error sound (using same sound as new order for now)
+      this.errorSound = new Sound('new_order.wav', Sound.MAIN_BUNDLE, (error) => {
         if (error) {
           console.error('Failed to load error sound:', error);
         }

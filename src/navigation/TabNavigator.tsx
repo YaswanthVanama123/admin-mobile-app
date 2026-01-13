@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import DashboardScreen from '../screens/DashboardScreen';
 import OrdersScreen from '../screens/OrdersScreen';
-import MenuScreen from '../screens/MenuScreen';
+import KitchenScreen from '../screens/KitchenScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { TabParamList } from './types';
 
@@ -23,7 +23,7 @@ export default function TabNavigator() {
             case 'Orders':
               iconName = 'list';
               break;
-            case 'Menu':
+            case 'Kitchen':
               iconName = 'restaurant';
               break;
             case 'Settings':
@@ -54,7 +54,7 @@ export default function TabNavigator() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Orders" component={OrdersScreen} />
-      <Tab.Screen name="Menu" component={MenuScreen} />
+      <Tab.Screen name="Kitchen" component={KitchenScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

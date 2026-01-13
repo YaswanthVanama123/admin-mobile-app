@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   AccessibilityInfo,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Order, OrderStatus } from '../../types';
 import { formatCurrency, getOrderAge } from '../../utils';
 import { useOrderTimer } from '../../hooks/useOrderTimer';

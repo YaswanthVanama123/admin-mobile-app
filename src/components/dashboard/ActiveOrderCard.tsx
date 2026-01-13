@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card, Button } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Order, OrderStatus } from '../../types';
 import { formatCurrency } from '../../utils/format';
 import { ORDER_STATUS_CONFIG } from '../../utils/constants';

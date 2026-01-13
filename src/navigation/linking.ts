@@ -14,7 +14,7 @@ const linking: LinkingOptions<RootStackParamList> = {
         screens: {
           Dashboard: 'dashboard',
           Orders: 'orders',
-          Menu: 'menu',
+          Kitchen: 'kitchen',
           Settings: 'settings',
         },
       },

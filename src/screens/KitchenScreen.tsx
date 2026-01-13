@@ -12,7 +12,7 @@ import {
   Dimensions,
   AccessibilityInfo,
 } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KitchenColumn } from '../components/KitchenColumn';
 import { Order, OrderStatus } from '../types';

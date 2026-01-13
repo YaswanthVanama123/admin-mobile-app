@@ -13,9 +13,6 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
-
-import expo.modules.ApplicationLifecycleDispatcher
-import expo.modules.ReactNativeHostWrapper
 import java.io.IOException
 
 // Firebase
@@ -23,8 +20,7 @@ import io.invertase.firebase.app.ReactNativeFirebaseAppPackage
 
 class MainApplication : Application(), ReactApplication {
 
-  override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
-      this,
+  override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
@@ -35,16 +31,15 @@ class MainApplication : Application(), ReactApplication {
               add(ReactNativeFirebaseAppPackage())
             }
 
-          override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"
+          override fun getJSMainModuleName(): String = "index"
 
           override fun getUseDeveloperSupport(): Boolean = BuildConfig.DEBUG
 
           override val isNewArchEnabled: Boolean = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED
       }
-  )
 
   override val reactHost: ReactHost
-    get() = ReactNativeHostWrapper.createReactHost(applicationContext, reactNativeHost)
+    get() = getReactNativeHost().reactInstanceManager.reactInstanceEventListener as ReactHost
 
   override fun onCreate() {
     super.onCreate()
@@ -68,11 +63,9 @@ class MainApplication : Application(), ReactApplication {
         windowUtilKt.getMethod("setEdgeToEdgeFeatureFlagOn").invoke(null)
       }
     }
-    ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)
-    ApplicationLifecycleDispatcher.onConfigurationChanged(this, newConfig)
   }
 }

@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { StatsCard, OrdersGrid } from '../../components/dashboard';
 import { dashboardApi } from '../../api/dashboard';
 import { DashboardStats, Order, OrderStatus } from '../../types';

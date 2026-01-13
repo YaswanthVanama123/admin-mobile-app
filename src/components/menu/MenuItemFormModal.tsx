@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
   Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import {
   TextInput,
@@ -18,8 +19,8 @@ import {
   Chip,
   ActivityIndicator,
 } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { MenuItem, MenuItemFormData, Category, AddOn } from '../../types';
 import CustomizationBuilder from './CustomizationBuilder';
 import AddOnsSelector from './AddOnsSelector';
@@ -116,13 +117,27 @@ const MenuItemFormModal: React.FC<MenuItemFormModalProps> = ({
   };
 
   const requestImagePermission = async () => {
-    if (Platform.OS !== 'web') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Sorry, we need camera roll permissions to upload images.'
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+          {
+            title: 'Gallery Permission',
+            message: 'App needs access to your photos to upload menu item images',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
         );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permission Required',
+            'Sorry, we need gallery permissions to upload images.'
+          );
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
         return false;
       }
     }
@@ -130,13 +145,27 @@ const MenuItemFormModal: React.FC<MenuItemFormModalProps> = ({
   };
 
   const requestCameraPermission = async () => {
-    if (Platform.OS !== 'web') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Sorry, we need camera permissions to take photos.'
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission',
+            message: 'App needs access to your camera to take photos',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
         );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permission Required',
+            'Sorry, we need camera permissions to take photos.'
+          );
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
         return false;
       }
     }
@@ -147,14 +176,15 @@ const MenuItemFormModal: React.FC<MenuItemFormModalProps> = ({
     const hasPermission = await requestImagePermission();
     if (!hasPermission) return;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 1000,
+      maxWidth: 1000,
       quality: 0.8,
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (result.assets && result.assets[0] && result.assets[0].uri) {
       setImageUri(result.assets[0].uri);
     }
   };
@@ -163,13 +193,16 @@ const MenuItemFormModal: React.FC<MenuItemFormModalProps> = ({
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
+    const result = await launchCamera({
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 1000,
+      maxWidth: 1000,
       quality: 0.8,
+      saveToPhotos: true,
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (result.assets && result.assets[0] && result.assets[0].uri) {
       setImageUri(result.assets[0].uri);
     }
   };

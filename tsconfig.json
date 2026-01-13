@@ -24,14 +24,13 @@
       "@types/*": ["./src/types/*"]
     }
   },
-  "extends": "expo/tsconfig.base",
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "android",
+    "ios"
   ]
 }

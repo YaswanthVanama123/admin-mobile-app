@@ -18,15 +18,15 @@ import {
   Snackbar,
 } from 'react-native-paper';
 import { Swipeable } from 'react-native-gesture-handler';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Order, OrderFilters as OrderFiltersType, OrderStatus, Table } from '../types';
 import { ordersApi } from '../api/orders.api';
 import { tablesApi } from '../api/tables.api';
 import { formatCurrency, formatDate, getRelativeTime, ORDER_STATUS_CONFIG } from '../utils';
 import OrderFilters from '../components/orders/OrderFilters';
 import OrderDetailsModal from '../components/orders/OrderDetailsModal';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
+import RNPrint from 'react-native-print';
+import Share from 'react-native-share';
 
 const OrdersScreen: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -135,20 +135,24 @@ const OrdersScreen: React.FC = () => {
     try {
       const html = generateReceiptHTML(order);
 
-      if (Platform.OS === 'ios' || Platform.OS === 'android') {
-        const { uri } = await Print.printToFileAsync({ html });
+      // Try to print directly first
+      try {
+        await RNPrint.print({ html });
+        setSnackbar({ visible: true, message: 'Receipt sent to printer' });
+      } catch (printError) {
+        // If direct print fails, offer to share the receipt
+        console.log('Direct print failed, offering share option:', printError);
 
-        // Share or print the PDF
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri);
-        } else {
-          await Print.printAsync({ uri });
+        // Generate PDF and share
+        const { filePath } = await RNPrint.print({ html });
+        if (filePath) {
+          await Share.open({
+            url: `file://${filePath}`,
+            type: 'application/pdf',
+          });
+          setSnackbar({ visible: true, message: 'Receipt shared successfully' });
         }
-      } else {
-        await Print.printAsync({ html });
       }
-
-      setSnackbar({ visible: true, message: 'Receipt printed successfully' });
     } catch (error) {
       console.error('Failed to print receipt:', error);
       setSnackbar({ visible: true, message: 'Failed to print receipt' });

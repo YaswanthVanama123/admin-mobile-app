@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { Surface, Button, Chip, Badge, ActivityIndicator, FAB, Searchbar } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useMenuPageData } from '../hooks/useMenuPageData';
 import { MenuItem } from '../types';
 import MenuItemFormModal from '../components/menu/MenuItemFormModal';

@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { TextInput, Button, Surface, Chip, Switch } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Customization, CustomizationOption } from '../../types';
 
 interface CustomizationBuilderProps {

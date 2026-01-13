@@ -14,7 +14,7 @@ export type AuthStackParamList = {
 export type TabParamList = {
   Dashboard: undefined;
   Orders: undefined;
-  Menu: undefined;
+  Kitchen: undefined;
   Settings: undefined;
 };
 
